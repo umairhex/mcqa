@@ -79,8 +79,6 @@ export function QuestionCard({
     setPhase("selection");
 
     setTimeout(() => {
-      setPhase("locked");
-      setPhase("evaluation");
       setPhase("feedback");
     }, 100);
   };
@@ -93,27 +91,27 @@ export function QuestionCard({
   };
 
   return (
-    <Card className="shadow-lg overflow-hidden flex flex-col h-fit w-full max-w-2xl">
+    <Card className="shadow-lg overflow-hidden flex flex-col w-full max-w-2xl max-h-[calc(100vh-5rem)]">
       {/* Header with progress indicator */}
-      <CardHeader className="bg-primary text-primary-foreground shrink-0">
+      <CardHeader className="bg-primary text-primary-foreground shrink-0 px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex justify-between items-start gap-4">
           <div>
-            <CardTitle className="text-2xl">
+            <CardTitle className="text-lg sm:text-2xl">
               Question {questionNumber}
             </CardTitle>
-            <CardDescription className="text-primary-foreground/80">
+            <CardDescription className="text-primary-foreground/80 text-xs sm:text-sm">
               of {totalQuestions} questions
             </CardDescription>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Cell Progress Bar */}
-            <div className="flex gap-0.5 h-3 w-32 sm:w-48">
+            <div className="flex gap-0.5 h-2 sm:h-3 w-24 sm:w-48">
               {Array.from({ length: totalQuestions }).map((_, i) => {
                 const isCurrent = i === questionNumber - 1;
                 const result = results[i];
                 const isAnswered = result !== undefined;
 
-                const isReachable = i <= results.length;
+                const isReachable = i < totalQuestions;
 
                 let bgClass = "bg-primary-foreground/20";
 
@@ -159,7 +157,7 @@ export function QuestionCard({
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-7 text-xs px-3 hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  className="h-7 text-xs px-2 sm:px-3 hover:bg-destructive hover:text-destructive-foreground transition-colors"
                 >
                   Finish
                 </Button>
@@ -187,15 +185,15 @@ export function QuestionCard({
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col min-h-0 p-8">
+      <CardContent className="flex-1 flex flex-col min-h-0 p-4 sm:p-8">
         {/* Question */}
-        <div className="mb-6 shrink-0">
-          <h2 className="text-2xl font-bold text-foreground">
+        <div className="mb-4 sm:mb-6 shrink-0">
+          <h2 className="text-lg sm:text-2xl font-bold text-foreground">
             {question.question}
           </h2>
         </div>
 
-        <ScrollArea className="flex-1 rounded-md border bg-muted/20 min-h-[200px] max-h-[350px]">
+        <ScrollArea className="flex-1 rounded-md border bg-muted/20 min-h-0">
           <div className="space-y-3 p-4">
             {question.options.map((option) => {
               const isSelected = selectedOptionId === option.id;

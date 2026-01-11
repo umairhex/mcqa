@@ -28,6 +28,7 @@ export function validateQuizJSON(jsonString: string): ValidationResult {
   }
 
   const questions: QuizQuestion[] = [];
+  const seenQuestionIds = new Set<number>();
 
   for (let i = 0; i < parsedData.length; i++) {
     const question = parsedData[i];
@@ -50,6 +51,16 @@ export function validateQuizJSON(jsonString: string): ValidationResult {
         fieldName: "id",
       };
     }
+
+    if (seenQuestionIds.has(question.id)) {
+      return {
+        isValid: false,
+        message: `Invalid format: Duplicate question ID found: ${question.id}`,
+        questionIndex: i,
+        fieldName: "id",
+      };
+    }
+    seenQuestionIds.add(question.id);
 
     if (
       !("question" in question) ||
@@ -90,6 +101,7 @@ export function validateQuizJSON(jsonString: string): ValidationResult {
 
     const options = question.options;
     let correctCount = 0;
+    const seenOptionIds = new Set<string>();
 
     for (let j = 0; j < options.length; j++) {
       const option = options[j];
@@ -118,6 +130,18 @@ export function validateQuizJSON(jsonString: string): ValidationResult {
           fieldName: "options[].id",
         };
       }
+
+      if (seenOptionIds.has(option.id)) {
+        return {
+          isValid: false,
+          message: `Invalid format: Question ${i + 1}, Option ${
+            j + 1
+          } has duplicate ID: ${option.id}`,
+          questionIndex: i,
+          fieldName: "options[].id",
+        };
+      }
+      seenOptionIds.add(option.id);
 
       if (
         !("text" in option) ||
@@ -150,12 +174,12 @@ export function validateQuizJSON(jsonString: string): ValidationResult {
       }
     }
 
-    if (correctCount === 0) {
+    if (correctCount !== 1) {
       return {
         isValid: false,
         message: `Invalid format: Question ${
           i + 1
-        } must have at least one correct answer`,
+        } must have exactly one correct answer`,
         questionIndex: i,
         fieldName: "isCorrect",
       };

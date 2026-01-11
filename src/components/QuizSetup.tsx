@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { QuizQuestion, ValidationError } from "../types/quiz";
 import { validateQuizJSON } from "../lib/validation";
 import { Button } from "@/components/ui/button";
@@ -49,12 +49,6 @@ export function QuizSetup({ onQuizStart }: QuizSetupProps) {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [copiedHistoryId, setCopiedHistoryId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isHistoryOpen) {
-      setHistory(getHistory());
-    }
-  }, [isHistoryOpen]);
-
   const handleSelectHistory = (item: HistoryItem) => {
     setJsonInput(JSON.stringify(item.questions, null, 2));
     setError(null);
@@ -90,16 +84,14 @@ Rules:
     setError(null);
     setIsLoading(true);
 
-    setTimeout(() => {
-      const result = validateQuizJSON(jsonInput);
+    const result = validateQuizJSON(jsonInput);
 
-      if (!result.isValid) {
-        setError(result);
-        setIsLoading(false);
-      } else {
-        onQuizStart(result.data);
-      }
-    }, 300);
+    if (!result.isValid) {
+      setError(result);
+      setIsLoading(false);
+    } else {
+      onQuizStart(result.data);
+    }
   };
 
   const handleCopyPrompt = async () => {
@@ -248,11 +240,11 @@ Example format:
             </Alert>
           )}
 
-          <div className="flex gap-3 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <Button
               type="submit"
               disabled={isLoading || !jsonInput.trim()}
-              className="flex-1"
+              className="w-full sm:w-auto sm:flex-1"
               size="lg"
             >
               {isLoading ? (
@@ -276,7 +268,15 @@ Example format:
               Load Sample
             </Button>
 
-            <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+            <Sheet
+              open={isHistoryOpen}
+              onOpenChange={(open) => {
+                setIsHistoryOpen(open);
+                if (open) {
+                  setHistory(getHistory());
+                }
+              }}
+            >
               <SheetTrigger asChild>
                 <Button variant="outline" size="lg">
                   <History className="h-4 w-4 mr-2" />
@@ -301,14 +301,14 @@ Example format:
                       history.map((item) => (
                         <div
                           key={item.id}
-                          className="group relative border rounded-md p-3 hover:bg-muted/50 transition-colors"
+                          className="group border rounded-md p-3 hover:bg-muted/50 transition-colors flex items-start gap-3"
                         >
                           <div
-                            className="cursor-pointer pr-1"
+                            className="flex-1 cursor-pointer min-w-0"
                             onClick={() => handleSelectHistory(item)}
                           >
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-sm">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="font-medium text-sm whitespace-nowrap">
                                 {new Date(item.timestamp).toLocaleDateString()}{" "}
                                 {new Date(item.timestamp).toLocaleTimeString(
                                   [],
@@ -318,20 +318,20 @@ Example format:
                                   }
                                 )}
                               </span>
-                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full whitespace-nowrap">
                                 {item.count} Qs
                               </span>
                             </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
+                            <p className="text-xs text-muted-foreground line-clamp-2 wrap-break-word">
                               {item.preview}
                             </p>
                           </div>
 
-                          <div className="absolute right-2 top-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded-md border shadow-sm">
+                          <div className="flex flex-col gap-1 shrink-0">
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7"
+                              className="h-7 w-7 opacity-70 hover:opacity-100"
                               title="Copy JSON"
                               onClick={(e) => handleCopyHistory(e, item)}
                             >
@@ -344,7 +344,7 @@ Example format:
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7 hover:text-destructive hover:bg-destructive/10"
+                              className="h-7 w-7 opacity-70 hover:opacity-100 hover:text-destructive hover:bg-destructive/10"
                               title="Delete"
                               onClick={(e) => handleDeleteHistory(e, item.id)}
                             >

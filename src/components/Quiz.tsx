@@ -18,30 +18,36 @@ import {
 
 import { saveToHistory } from "../lib/history";
 
-export function Quiz() {
-  const [phase, setPhase] = useState<QuizPhase>("setup");
-  const [questions, setQuestions] = useState<QuizQuestionType[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [results, setResults] = useState<boolean[]>([]);
-  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+function getSavedState() {
+  if (typeof window === "undefined") return null;
+  try {
+    const saved = localStorage.getItem("quizState");
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+    if (!parsed.questions || parsed.questions.length === 0) return null;
+    return parsed;
+  } catch (e) {
+    console.error("Failed to load quiz state:", e);
+    return null;
+  }
+}
 
-  useEffect(() => {
-    const savedState = localStorage.getItem("quizState");
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
-        if (parsed.questions && parsed.questions.length > 0) {
-          setQuestions(parsed.questions);
-          setCurrentQuestionIndex(parsed.currentQuestionIndex || 0);
-          setPhase(parsed.phase || "setup");
-          setResults(parsed.results || []);
-          setUserAnswers(parsed.userAnswers || {});
-        }
-      } catch (e) {
-        console.error("Failed to load quiz state:", e);
-      }
-    }
-  }, []);
+export function Quiz() {
+  const [phase, setPhase] = useState<QuizPhase>(
+    () => getSavedState()?.phase || "setup"
+  );
+  const [questions, setQuestions] = useState<QuizQuestionType[]>(
+    () => getSavedState()?.questions || []
+  );
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
+    () => getSavedState()?.currentQuestionIndex || 0
+  );
+  const [results, setResults] = useState<boolean[]>(
+    () => getSavedState()?.results || []
+  );
+  const [userAnswers, setUserAnswers] = useState<Record<number, string>>(
+    () => getSavedState()?.userAnswers || {}
+  );
 
   useEffect(() => {
     if (questions.length > 0) {
@@ -59,6 +65,7 @@ export function Quiz() {
   }, [phase, questions, currentQuestionIndex, results, userAnswers]);
 
   const handleQuizStart = (loadedQuestions: QuizQuestionType[]) => {
+    localStorage.removeItem("quizState");
     saveToHistory(loadedQuestions);
     setQuestions(loadedQuestions);
     setCurrentQuestionIndex(0);
@@ -67,19 +74,23 @@ export function Quiz() {
     setPhase("quiz");
   };
 
-  const handleAnswerComplete = (isCorrect: boolean) => {
+  const handleAnswerComplete = (isCorrect: boolean, optionId: string) => {
     setResults((prev) => {
       const newResults = [...prev];
       newResults[currentQuestionIndex] = isCorrect;
       return newResults;
     });
 
+    setUserAnswers((prev) => ({
+      ...prev,
+      [currentQuestionIndex]: optionId,
+    }));
+
     const nextIndex = currentQuestionIndex + 1;
 
     if (nextIndex < questions.length) {
       setCurrentQuestionIndex(nextIndex);
     } else {
-      setCurrentQuestionIndex(nextIndex);
       setPhase("complete");
     }
   };
@@ -99,6 +110,7 @@ export function Quiz() {
     setQuestions([]);
     setCurrentQuestionIndex(0);
     setResults([]);
+    setUserAnswers({});
   };
 
   return (
@@ -162,6 +174,7 @@ export function Quiz() {
             questionNumber={currentQuestionIndex + 1}
             totalQuestions={questions.length}
             results={results}
+            initialSelectedOptionId={userAnswers[currentQuestionIndex]}
             onAnswerComplete={handleAnswerComplete}
             onQuizEnd={handleQuizEnd}
             onQuestionSelect={handleQuestionSelect}
@@ -170,7 +183,7 @@ export function Quiz() {
         {phase === "complete" && (
           <QuizComplete
             totalQuestions={questions.length}
-            questionsAnswered={currentQuestionIndex}
+            questionsAnswered={results.filter((r) => r !== undefined).length}
             onRestart={handleRestart}
           />
         )}

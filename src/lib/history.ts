@@ -19,10 +19,7 @@ export function saveToHistory(questions: QuizQuestion[]) {
 
     if (history.length > 0) {
       const latest = history[0];
-      if (
-        latest.questions.length === questions.length &&
-        latest.questions[0].question === questions[0].question
-      ) {
+      if (JSON.stringify(latest.questions) === JSON.stringify(questions)) {
         return;
       }
     }
@@ -31,9 +28,10 @@ export function saveToHistory(questions: QuizQuestion[]) {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
       questions,
-      preview:
-        questions[0].question.substring(0, 60) +
-        (questions[0].question.length > 60 ? "..." : ""),
+      preview: questions[0]
+        ? questions[0].question.substring(0, 60) +
+          (questions[0].question.length > 60 ? "..." : "")
+        : "No preview",
       count: questions.length,
     };
 
